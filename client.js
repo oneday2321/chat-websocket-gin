@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function connect() {
         ws = new WebSocket('wss://8080-741780596661125120-Xqb5-web.staging.clackypaas.com/ws/123456'); // 修改为你的公共URL
-        startHeartbeat();
-        reconnectAttempts = 0;
 
         ws.onopen = function () {
             console.log('Connected to the WebSocket server.');
@@ -20,10 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         ws.onmessage = function (event) {
             var message = JSON.parse(event.data);
-            // Handle heartbeat message
-            if (message.type === 'heartbeat') {
-                console.log('Heartbeat received');
-            }
             var listItem = document.createElement('li');
             listItem.textContent = `${message.sender}: ${message.content}`;
             messagesList.appendChild(listItem);
@@ -36,9 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sendButton.disabled = true;
 
             // 尝试重连
-            reconnectAttempts = Math.min(reconnectAttempts + 1, 10);
-            const timeout = Math.pow(2, reconnectAttempts) * 1000;
-            setTimeout(connect, timeout); // Use exponential backoff for reconnection
+            setTimeout(connect, 3000); // 3秒后尝试重连
         };
 
         ws.onerror = function (error) {
@@ -46,14 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
-    let reconnectAttempts = 0;
-    function startHeartbeat() {
-        setInterval(() => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({type: 'heartbeat'}));
-            }
-        }, 30000); // Send a heartbeat every 30 seconds
-    }
+    connectButton.addEventListener('click', connect);
 
     disconnectButton.addEventListener('click', function () {
         if (ws) {
