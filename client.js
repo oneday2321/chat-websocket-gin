@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var messagesList = document.getElementById('messages');
 
     function connect() {
-        ws = new WebSocket('wss://8080-741780596661125120-Xqb5-web.staging.clackypaas.com/ws/123456'); // 修改为你的公共URL
+        ws = new WebSocket('wss://8080-741795251496554496-OOWq-web.staging.clackypaas.com/ws/123456'); // 修改为你的公共URL
 
         ws.onopen = function () {
             console.log('Connected to the WebSocket server.');
@@ -18,9 +18,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         ws.onmessage = function (event) {
             var message = JSON.parse(event.data);
-            var listItem = document.createElement('li');
-            listItem.textContent = `${message.sender}: ${message.content}`;
-            messagesList.appendChild(listItem);
+            if (message.type === 'message') {
+                var listItem = document.createElement('li');
+                listItem.textContent = `${message.sender}: ${message.content}`;
+                messagesList.appendChild(listItem);
+            } else if (message.type === 'notification') {
+                var notificationItem = document.createElement('li');
+                notificationItem.textContent = `Notification: ${message.content}`;
+                messagesList.appendChild(notificationItem);
+            }
         };
 
         ws.onclose = function (event) {
@@ -33,8 +39,20 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(connect, 3000); // 3秒后尝试重连
         };
 
-        ws.onerror = function (error) {
-            console.error('WebSocket error:', error);
+        ws.onerror = function (event) {
+            var errorMessage;
+            try {
+                var message = JSON.parse(event.data);
+                if (message.type === 'error') {
+                    errorMessage = message.content;
+                } else {
+                    errorMessage = 'An unknown error occurred.';
+                }
+            } catch (e) {
+                errorMessage = 'An error occurred, but the message format is wrong.';
+            }
+            console.error('WebSocket error:', errorMessage);
+            alert(errorMessage);
         };
     }
 
