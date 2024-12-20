@@ -1,0 +1,19 @@
+# Clacky-related configuration
+.1024*
+!.1024
+.breakpoints
+
+# Language-specific files
+*.exe
+*.test
+*.out
+*.cache
+*.log
+
+# Framework-related files
+bin/
+obj/
+vendor/
+
+# Package manager directories
+venv/
