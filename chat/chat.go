@@ -59,10 +59,13 @@ func (c *Client) Read() {
 		var msg Message
 		err := c.Conn.ReadJSON(&msg)
 		if err != nil {
-			fmt.Println("Error: ", err)
+			errorMsg := Message{Type: "error", Content: fmt.Sprintf("Read Error: %v", err)}
+			_ = c.Conn.WriteJSON(errorMsg)
 			break
 		}
-		c.hub.broadcast <- msg
+		if msg.Type == "message" {
+			c.hub.broadcast <- msg
+		}
 	}
 }
 
@@ -95,7 +98,11 @@ func (c *Client) Write() {
 				return
 			}
 		}
-
+	}
+	
+	// Handle potential websocket closing
+	if err := c.Conn.WriteMessage(websocket.CloseMessage, []byte{}); err != nil {
+		return
 	}
 }
 

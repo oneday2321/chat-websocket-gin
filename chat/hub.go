@@ -66,41 +66,43 @@ func (h *Hub) RegisterNewClient(client *Client) {
 	fmt.Println("Size of clients: ", len(h.clients[client.ID]))
 }
 
-//function to remvoe client from room
+//function to remove client from room
 func (h *Hub) RemoveClient(client *Client) {
 	if _, ok := h.clients[client.ID]; ok {
 		delete(h.clients[client.ID], client)
 		close(client.send)
 		fmt.Println("Removed client")
+		errorMsg := Message{Type: "error", Content: fmt.Sprintf("Client %s has been disconnected.", client.ID)}
+		h.broadcast <- errorMsg
 	}
 }
 
 //function to handle message based on type of message
 func (h *Hub) HandleMessage(message Message) {
 
-	//Check if the message is a type of "message"
+	// Check user message type
 	if message.Type == "message" {
-		clients := h.clients[message.ID]
-		for client := range clients {
-			select {
-			case client.send <- message:
-			default:
-				close(client.send)
-				delete(h.clients[message.ID], client)
-			}
-		}
-	}
-
-	//Check if the message is a type of "notification"
-	if message.Type == "notification" {
-		fmt.Println("Notification: ", message.Content)
-		clients := h.clients[message.Recipient]
-		for client := range clients {
+		// Forward messages to the intended recipient
+		recipientClients := h.clients[message.Recipient]
+		for client := range recipientClients {
 			select {
 			case client.send <- message:
 			default:
 				close(client.send)
 				delete(h.clients[message.Recipient], client)
+			}
+		}
+	} else if message.Type == "notification" {
+		// Broadcast notification to all clients
+		fmt.Println("Notification: ", message.Content)
+		for _, clients := range h.clients {
+			for client := range clients {
+				select {
+				case client.send <- message:
+				default:
+					close(client.send)
+					delete(h.clients[client.ID], client)
+				}
 			}
 		}
 	}
